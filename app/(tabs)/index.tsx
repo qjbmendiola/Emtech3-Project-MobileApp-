@@ -1,98 +1,311 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Animated,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useRef, useState, useEffect } from "react";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// ✅ STORAGE FIX
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function HomeScreen() {
+export default function Home() {
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  /////////////////////////////////////////////////////////
+  // 🔥 LOAD USER (FIXED)
+  /////////////////////////////////////////////////////////
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        if (Platform.OS === "web") {
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) setUser(JSON.parse(storedUser));
+        } else {
+          const storedUser = await AsyncStorage.getItem("user");
+          if (storedUser) setUser(JSON.parse(storedUser));
+        }
+      } catch (e) {
+        console.log("Error loading user:", e);
+      }
+    };
+
+    loadUser();
+  }, []);
+
+  /////////////////////////////////////////////////////////
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.container}>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* 🔴 HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.logo}>PLDT Smart</Text>
+
+          <View style={{ position: "relative", zIndex: 1000 }}>
+            <Pressable onPress={() => setMenuOpen(!menuOpen)}>
+              <Ionicons name="person-circle-outline" size={30} color="#fff" />
+            </Pressable>
+
+            {menuOpen && (
+               <View style={styles.dropdown}>
+                 <Pressable onPress={() => router.push("/login")}>
+                  <Text style={styles.dropdownItem}>Sign In</Text>
+                </Pressable>
+
+                <Pressable onPress={() => router.push("/signup")}>
+                  <Text style={styles.dropdownItem}>Register</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </View> 
+
+        {/* 🎁 CARD */}
+        <Card>
+          <View style={styles.row}>
+            <Ionicons name="gift-outline" size={22} color="#d32f2f" />
+            <View style={{ marginLeft: 10 }}>
+              <Text style={styles.bold}>Invite Friends</Text>
+              <Text style={styles.small}>Earn rewards by sharing</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* 🔥 MAIN DASHBOARD */}
+        <Card style={styles.mainCard}>
+          <Text style={styles.cardLabel}>Support Dashboard</Text>
+
+          {/* 👇 USER GREETING */}
+          <Text style={styles.bigText}>
+            Hi, {user?.username || "Guest"} 👋
+          </Text>
+
+          <View style={styles.rowBetween}>
+            <AnimatedButton
+              label="Chat Support"
+              onPress={() => router.push("/chat")}
+            />
+            <AnimatedButton
+              label="Outage Map"
+              onPress={() => router.push("/outage")}
+              secondary
+            />
+          </View>
+        </Card>
+
+        {/* 🟡 RECENT ACTIVITY */}
+        {user && (
+          <Card>
+            <Text style={styles.bold}>Recent Activity</Text>
+            <Text style={styles.activity}>• Asked about slow internet</Text>
+            <Text style={styles.activity}>• Checked outage (QC)</Text>
+            <Text style={styles.activity}>• Opened router guide</Text>
+          </Card>
+        )}
+
+        {/* 📦 FEATURES */}
+        <Feature
+          icon="chatbubble-ellipses"
+          title="AI Chatbot"
+          desc="Ask anytime"
+          onPress={() => router.push("/chat")}
+        />
+
+        <Feature
+          icon="map"
+          title="Outage Map"
+          desc="Check interruptions"
+          onPress={() => router.push("/outage")}
+        />
+
+        <Feature
+          icon="settings"
+          title="Router Setup"
+          desc="Fix connection"
+          onPress={() => router.push("/router")}
+        />
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
+//////////////////////////////////////////////////////////
+// 🔧 COMPONENTS
+//////////////////////////////////////////////////////////
+
+function Card({ children, style }: any) {
+  return <View style={[styles.card, style]}>{children}</View>;
+}
+
+function AnimatedButton({ label, onPress, secondary }: any) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  return (
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Pressable
+        onPressIn={() =>
+          Animated.spring(scale, { toValue: 0.95, useNativeDriver: true }).start()
+        }
+        onPressOut={() =>
+          Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()
+        }
+        onPress={onPress}
+        style={[
+          styles.button,
+          secondary ? styles.secondaryBtn : styles.primaryBtn,
+        ]}
+      >
+        <Text style={secondary ? styles.secondaryText : styles.primaryText}>
+          {label}
+        </Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
+function Feature({ icon, title, desc, onPress }: any) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Pressable style={styles.feature} onPress={() => setOpen(!open)}>
+      <Ionicons name={icon} size={24} color="#d32f2f" />
+
+      <View style={{ marginLeft: 10, flex: 1 }}>
+        <Text style={styles.featureTitle}>{title}</Text>
+        <Text style={styles.featureDesc}>{desc}</Text>
+
+        {open && (
+          <Text style={styles.dropdownInfo}>
+            {title === "AI Chatbot" &&
+              "Instant answers and troubleshooting."}
+            {title === "Outage Map" &&
+              "View affected areas and updates."}
+            {title === "Router Setup" &&
+              "Step-by-step configuration guide."}
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
+//////////////////////////////////////////////////////////
+// 🎨 STYLES
+//////////////////////////////////////////////////////////
+
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  safe: { flex: 1, backgroundColor: "#f4f6f9" },
+
+  container: { padding: 15, paddingBottom: 100 },
+
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#d32f2f",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 15,
+
+    position: "relative",   // 👈 REQUIRED
+    zIndex: 999,            // 👈 BRING TO FRONT
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  logo: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+
+ dropdown: {
+  position: "absolute",
+  top: 45,
+  right: 0,
+
+  backgroundColor: "#fff",
+  borderRadius: 10,
+  padding: 10,
+  width: 140,
+
+  zIndex: 1000,     // 👈 HIGHER THAN HEADER
+  elevation: 20,    // 👈 ANDROID FIX
+
+  shadowColor: "#000",
+  shadowOpacity: 0.25,
+  shadowRadius: 6,
+},
+
+  dropdownItem: {
+    paddingVertical: 8,
+    textAlign: "center",
+    color: "#d32f2f",
+    fontWeight: "bold",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  card: {
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 15,
+    marginBottom: 12,
+    elevation: 3,
   },
+
+  mainCard: { backgroundColor: "#d32f2f" },
+
+  cardLabel: { color: "#fff", fontSize: 12 },
+
+  bigText: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginVertical: 10,
+  },
+
+  row: { flexDirection: "row", alignItems: "center" },
+
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+  },
+
+  primaryBtn: { backgroundColor: "#fff" },
+  secondaryBtn: { backgroundColor: "#000" },
+
+  primaryText: { color: "#d32f2f", fontWeight: "bold" },
+  secondaryText: { color: "#fff", fontWeight: "bold" },
+
+  feature: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
+    elevation: 2,
+  },
+
+  featureTitle: { fontWeight: "bold" },
+  featureDesc: { fontSize: 12, color: "#666" },
+
+  dropdownInfo: {
+    marginTop: 8,
+    fontSize: 12,
+    color: "#444",
+  },
+
+  activity: { fontSize: 12, marginTop: 5, color: "#555" },
+
+  bold: { fontWeight: "bold" },
+  small: { fontSize: 12, color: "#666" },
 });
