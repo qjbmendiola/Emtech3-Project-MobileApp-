@@ -1,17 +1,17 @@
-# 📡 EMTECH Mobile App - Internet Support System
+EMTECH Mobile App - Internet Support System
 
-## Features
+Features
 - 🤖 AI Network Assistant (chat support)
 - 🗺️ Live Outage Map (Philippines)
 - ⚙️ Router Troubleshooter (Cisco-based guide)
 - 🔐 Login system
 
-## Tech Stack
+ Tech Stack
 - React Native (Expo)
 - TypeScript
 - Node.js (backend)
 
-## Description
+ Description
 This mobile app helps users:
 - Diagnose internet problems
 - View outages in real time
