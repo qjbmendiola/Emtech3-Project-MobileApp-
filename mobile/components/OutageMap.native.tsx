@@ -1,43 +1,71 @@
+import MapView, { Marker, Heatmap } from "react-native-maps";
+import { useRef, useEffect } from "react";
 import { StyleSheet } from "react-native";
-import MapView, { Marker } from "react-native-maps";
-import { useRef } from "react";
-
-type Outage = {
-  id: number;
-  title: string;
-  severity: string;
-  users: number;
-  lat: number;
-  lng: number;
-};
+import { Outage } from "../types/outage";
 
 type Props = {
-  outages: Outage[];
-  onSelect: (item: Outage) => void;
+  outages?: Outage[];
+  onSelect?: (item: Outage) => void;
+  selected?: Outage | null;
 };
 
-export default function OutageMap({ outages, onSelect }: Props) {
-  const mapRef = useRef<any>(null);
+export default function OutageMap({
+  outages = [],
+  onSelect,
+  selected,
+}: Props) {
+  const mapRef = useRef<MapView | null>(null);
 
-  const handlePress = (o: Outage) => {
-    onSelect(o);
+  // ✅ SAFE HEATMAP
+  const heatmapPoints = outages
+    .filter(
+      (item) =>
+        item.lat &&
+        item.lng &&
+        !isNaN(item.lat) &&
+        !isNaN(item.lng)
+    )
+    .map((item) => ({
+      latitude: item.lat,
+      longitude: item.lng,
+      weight: item.users || 1,
+    }));
 
-    // 🔥 ZOOM TO LOCATION
-    mapRef.current?.animateToRegion(
-      {
-        latitude: o.lat,
-        longitude: o.lng,
-        latitudeDelta: 0.05,
-        longitudeDelta: 0.05,
-      },
-      1000
-    );
-  };
+  // 🔥 AUTO FIT
+  useEffect(() => {
+    if (outages.length > 0 && mapRef.current) {
+      mapRef.current.fitToCoordinates(
+        outages.map((o) => ({
+          latitude: o.lat,
+          longitude: o.lng,
+        })),
+        {
+          edgePadding: { top: 100, right: 100, bottom: 200, left: 100 },
+          animated: true,
+        }
+      );
+    }
+  }, [outages]);
+
+  // 🔥 ZOOM TO SELECTED
+  useEffect(() => {
+    if (selected && mapRef.current) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: selected.lat,
+          longitude: selected.lng,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
+        },
+        800
+      );
+    }
+  }, [selected]);
 
   return (
     <MapView
       ref={mapRef}
-      style={StyleSheet.absoluteFillObject}
+      style={StyleSheet.absoluteFillObject} // 🔥 FULLSCREEN FIX
       initialRegion={{
         latitude: 14.5995,
         longitude: 120.9842,
@@ -45,18 +73,22 @@ export default function OutageMap({ outages, onSelect }: Props) {
         longitudeDelta: 5,
       }}
     >
-      {outages.map((o) => (
+      {/* 🔥 HEATMAP */}
+      {heatmapPoints.length > 0 && (
+        <Heatmap points={heatmapPoints} />
+      )}
+
+      {/* 🔥 MARKERS */}
+      {outages.map((item) => (
         <Marker
-          key={o.id}
-          coordinate={{ latitude: o.lat, longitude: o.lng }}
-          onPress={() => handlePress(o)}
-          pinColor={
-            o.severity === "High"
-              ? "red"
-              : o.severity === "Medium"
-              ? "orange"
-              : "green"
-          }
+          key={item.id}
+          coordinate={{
+            latitude: item.lat,
+            longitude: item.lng,
+          }}
+          title={item.title}
+          description={`${item.users} users`}
+          onPress={() => onSelect?.(item)}
         />
       ))}
     </MapView>

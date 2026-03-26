@@ -1,51 +1,29 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
-
-type Outage = {
-  id: number;
-  title: string;
-  severity: string;
-  users: number;
-};
+import { View, Text, Pressable } from "react-native";
+import { Outage } from "../types/outage";
 
 type Props = {
-  outages?: Outage[]; // ✅ optional
+  outages?: Outage[];
   onSelect?: (item: Outage) => void;
+  selected?: Outage | null;
 };
 
-export default function OutageMap({ outages = [], onSelect }: Props) {
+export default function OutageMap({
+  outages = [],
+  onSelect,
+}: Props) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>🌐 Outage Map (Web Preview)</Text>
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontWeight: "bold", marginBottom: 10 }}>
+        🌐 Outage Map (Web Preview)
+      </Text>
 
-      {outages.map((o) => (
-        <Pressable
-          key={o.id}
-          style={styles.card}
-          onPress={() => onSelect?.(o)}
-        >
-          <Text style={{ fontWeight: "bold" }}>{o.title}</Text>
-          <Text>Severity: {o.severity}</Text>
+      {outages.map((item) => (
+        <Pressable key={item.id} onPress={() => onSelect?.(item)}>
+          <Text>
+            {item.title} - {item.severity} ({item.users})
+          </Text>
         </Pressable>
       ))}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-
-  title: {
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-
-  card: {
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-});
