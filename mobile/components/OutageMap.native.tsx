@@ -1,4 +1,4 @@
-import MapView, { Marker, Heatmap } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import { useRef, useEffect } from "react";
 import { StyleSheet } from "react-native";
 import { Outage } from "../types/outage";
@@ -16,29 +16,16 @@ export default function OutageMap({
 }: Props) {
   const mapRef = useRef<MapView | null>(null);
 
-  // ✅ SAFE HEATMAP
-  const heatmapPoints = outages
-    .filter(
-      (item) =>
-        item.lat &&
-        item.lng &&
-        !isNaN(item.lat) &&
-        !isNaN(item.lng)
-    )
-    .map((item) => ({
-      latitude: item.lat,
-      longitude: item.lng,
-      weight: item.users || 1,
-    }));
-
   // 🔥 AUTO FIT
   useEffect(() => {
     if (outages.length > 0 && mapRef.current) {
+      const valid = outages.filter(
+        (o) => o.lat && o.lng && !isNaN(o.lat) && !isNaN(o.lng)
+      );
+      if (valid.length === 0) return;
+
       mapRef.current.fitToCoordinates(
-        outages.map((o) => ({
-          latitude: o.lat,
-          longitude: o.lng,
-        })),
+        valid.map((o) => ({ latitude: o.lat, longitude: o.lng })),
         {
           edgePadding: { top: 100, right: 100, bottom: 200, left: 100 },
           animated: true,
@@ -65,7 +52,7 @@ export default function OutageMap({
   return (
     <MapView
       ref={mapRef}
-      style={StyleSheet.absoluteFillObject} // 🔥 FULLSCREEN FIX
+      style={StyleSheet.absoluteFillObject}
       initialRegion={{
         latitude: 14.5995,
         longitude: 120.9842,
@@ -73,24 +60,23 @@ export default function OutageMap({
         longitudeDelta: 5,
       }}
     >
-      {/* 🔥 HEATMAP */}
-      {heatmapPoints.length > 0 && (
-        <Heatmap points={heatmapPoints} />
-      )}
+      {outages.map((item) => {
+        // Guard bad coords — prevents native crash
+        if (!item.lat || !item.lng || isNaN(item.lat) || isNaN(item.lng))
+          return null;
 
-      {/* 🔥 MARKERS */}
-      {outages.map((item) => (
-        <Marker
-          key={item.id}
-          coordinate={{
-            latitude: item.lat,
-            longitude: item.lng,
-          }}
-          title={item.title}
-          description={`${item.users} users`}
-          onPress={() => onSelect?.(item)}
-        />
-      ))}
+        return (
+          <Marker
+            key={item.id}
+            coordinate={{ latitude: item.lat, longitude: item.lng }}
+            title={item.title}
+            description={`${item.users} users affected`}
+            onPress={() => onSelect?.(item)}
+          />
+        );
+      })}
     </MapView>
   );
 }
+
+const styles = StyleSheet.create({});

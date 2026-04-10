@@ -22,10 +22,10 @@ export default function Login() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [username, setUsername]       = useState("");
-  const [password, setPassword]       = useState("");
+  const [username, setUsername]         = useState("");
+  const [password, setPassword]         = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading]         = useState(false);
+  const [loading, setLoading]           = useState(false);
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -74,7 +74,7 @@ export default function Login() {
           <View style={styles.card}>
 
             <View style={styles.topRow}>
-              <Text style={styles.badge}>PLDT Smart Support</Text>
+              <Text style={styles.badge}>ISP Smart Support</Text>
               <Pressable onPress={() => router.push("/signup")}>
                 <Text style={styles.link}>Sign Up</Text>
               </Pressable>
@@ -86,6 +86,7 @@ export default function Login() {
             <Text style={styles.label}>Username or Email</Text>
             <TextInput
               placeholder="Enter your username or email"
+              placeholderTextColor="#999"
               style={styles.input}
               value={username}
               onChangeText={setUsername}
@@ -96,6 +97,7 @@ export default function Login() {
             <View style={styles.passwordWrap}>
               <TextInput
                 placeholder="Enter your password"
+                placeholderTextColor="#999"
                 secureTextEntry={!showPassword}
                 style={styles.inputFlex}
                 value={password}
@@ -130,18 +132,18 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#e9edf2" },
-  container: { flexGrow: 1, justifyContent: "center", padding: 20 },
-  card: { backgroundColor: "#fff", borderRadius: 20, padding: 20, elevation: 5 },
-  topRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  badge: { backgroundColor: "#e3ecf5", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, fontSize: 12 },
-  link: { color: "red", fontWeight: "500" },
-  title: { fontSize: 26, fontWeight: "bold", marginTop: 10 },
-  subtitle: { marginBottom: 15, color: "#555" },
-  label: { marginTop: 10, marginBottom: 5 },
-  input: { backgroundColor: "#f1f3f6", padding: 12, borderRadius: 10 },
+  safe:         { flex: 1, backgroundColor: "#e9edf2" },
+  container:    { flexGrow: 1, justifyContent: "center", padding: 20 },
+  card:         { backgroundColor: "#fff", borderRadius: 20, padding: 20, elevation: 5 },
+  topRow:       { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
+  badge:        { backgroundColor: "#e3ecf5", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, fontSize: 12 },
+  link:         { color: "red", fontWeight: "500" },
+  title:        { fontSize: 26, fontWeight: "bold", marginTop: 10 },
+  subtitle:     { marginBottom: 15, color: "#555" },
+  label:        { marginTop: 10, marginBottom: 5 },
+  input:        { backgroundColor: "#f1f3f6", padding: 12, borderRadius: 10, color: "#111" },
   passwordWrap: { flexDirection: "row", alignItems: "center", backgroundColor: "#f1f3f6", borderRadius: 10, paddingHorizontal: 10, justifyContent: "space-between" },
-  inputFlex: { flex: 1, paddingVertical: 12 },
-  loginBtn: { backgroundColor: "#d32f2f", padding: 15, borderRadius: 30, alignItems: "center", marginTop: 20 },
-  loginText: { color: "#fff", fontWeight: "bold" },
+  inputFlex:    { flex: 1, paddingVertical: 12, color: "#111" },
+  loginBtn:     { backgroundColor: "#d32f2f", padding: 15, borderRadius: 30, alignItems: "center", marginTop: 20 },
+  loginText:    { color: "#fff", fontWeight: "bold" },
 });
