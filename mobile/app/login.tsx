@@ -40,7 +40,7 @@ export default function Login() {
     const timeout = setTimeout(() => controller.abort(), 30000);
 
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
