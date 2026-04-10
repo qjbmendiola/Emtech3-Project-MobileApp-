@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = "http://192.168.100.128:5000/api";
+const API_BASE = "https://outage-api-h3ko.onrender.com/api"; // ✅ Updated to Render URL
 
 export default function Login() {
   const router = useRouter();
@@ -35,16 +35,22 @@ export default function Login() {
 
     setLoading(true);
 
+    // ✅ 30-second timeout to handle Render cold start
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
     try {
-      const res = await fetch(`${API_BASE}/login`, {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: username.trim(),
           password,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeout);
       const data = await res.json();
 
       if (!res.ok) {
@@ -56,9 +62,18 @@ export default function Login() {
       await login(data.user, data.token);
       router.replace("/(tabs)");
 
-    } catch (error) {
+    } catch (error: any) {
+      clearTimeout(timeout);
       console.log(error);
-      Alert.alert("Error", "Cannot connect to server. Make sure the server is running.");
+
+      if (error.name === "AbortError") {
+        Alert.alert(
+          "Server Waking Up",
+          "The server is starting up. Please wait 30 seconds and try again."
+        );
+      } else {
+        Alert.alert("Error", "Cannot connect to server. Please check your internet connection.");
+      }
     }
 
     setLoading(false);
