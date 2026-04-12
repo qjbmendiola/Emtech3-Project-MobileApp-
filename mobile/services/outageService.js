@@ -12,7 +12,6 @@ export async function getOutages() {
     }
 
     const data = await res.json();
-    console.log("[outageService] raw data:", JSON.stringify(data));
 
     if (!Array.isArray(data)) {
       console.error("[outageService] expected array, got:", typeof data);
@@ -22,13 +21,12 @@ export async function getOutages() {
     const mapped = data
       .filter((item) => item.lat && item.lng && !isNaN(item.lat) && !isNaN(item.lng))
       .map((item) => ({
-        id:       item.id,          // ✅ keep as number to match Outage type
-        title:    item.area,
-        severity: item.status === "Outage"
-          ? "High"
-          : item.status === "Investigating"
-          ? "Medium"
-          : "Low",
+        id:    item.id,
+        title: item.area,
+        severity:
+          item.status === "Outage"        ? "High"   :
+          item.status === "Investigating" ? "Medium" :
+                                            "Low",   // Normal → Low (green pin)
         users: item.affectedUsers,
         lat:   item.lat,
         lng:   item.lng,
