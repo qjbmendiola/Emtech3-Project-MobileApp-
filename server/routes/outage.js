@@ -1,11 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const router  = express.Router();
-const cheerio = require("cheerio");
-const got     = require("got");
 
 // ─────────────────────────────
-// 📍 ALL PHILIPPINE LOCATIONS (always shown)
+// 📍 ALL PHILIPPINE LOCATIONS
 // ─────────────────────────────
 const ALL_LOCATIONS = {
   "Quezon City":    { lat: 14.676,   lng: 121.0437 },
@@ -41,109 +39,45 @@ const ALL_LOCATIONS = {
 };
 
 // ─────────────────────────────
-// ⚙️ SCRAPE SOURCES
+// 🎲 SEEDED RANDOM
+// Seed changes every hour so the map rotates realistically
 // ─────────────────────────────
-const OUTAGE_SOURCES = [
-  { isp: "PLDT",     url: "https://outage.report/ph/pldt" },
-  { isp: "Globe",    url: "https://outage.report/ph/globe" },
-  { isp: "Converge", url: "https://outage.report/ph/converge-ict" },
-];
+function seededRand(seed) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
 
-// ─────────────────────────────
-// 🔥 REPORT STORAGE
-// ─────────────────────────────
-let scrapedReports = [];
+function buildMockOutages() {
+  const areas    = Object.keys(ALL_LOCATIONS);
+  const hourSeed = Math.floor(Date.now() / (60 * 60 * 1000)); // new seed every hour
 
-// ─────────────────────────────
-// 📡 SCRAPER
-// ─────────────────────────────
-async function scrapeOutageReport() {
-  const newReports = [];
+  // Score each area
+  const scored = areas.map((area, i) => ({
+    area,
+    score: seededRand(hourSeed * 31 + i * 7),
+  }));
 
-  for (const src of OUTAGE_SOURCES) {
-    try {
-      const res = await got(src.url, {
-        timeout: { request: 15000 },
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
-        },
-      });
+  // Sort by score so we can deterministically pick the top ~50
+  scored.sort((a, b) => b.score - a.score);
 
-      const $ = cheerio.load(res.body);
-
-      $("p, li, div.tweet, .outage-text, .report-text").each((_, el) => {
-        const text = $(el).text().trim();
-        if (text.length > 20 && text.length < 500) {
-          newReports.push({ message: text, isp: src.isp, time: new Date() });
-        }
-      });
-
-    } catch (err) {
-      console.log(`[outage] scrape error (${src.isp}):`, err.message);
+  // Top 10  → Outage   (red,    5–10 hits)
+  // Next 20 → Investigating (yellow, 1–4 hits)
+  // Rest    → Normal   (green,  0 hits)
+  const hitCounts = {};
+  scored.forEach(({ area, score }, idx) => {
+    if (idx < 10) {
+      hitCounts[area] = Math.floor(score * 6) + 5;   // 5–10
+    } else if (idx < 30) {
+      hitCounts[area] = Math.floor(score * 4) + 1;   // 1–4
+    } else {
+      hitCounts[area] = 0;
     }
-  }
+  });
 
-  return newReports;
-}
-
-// ─────────────────────────────
-// 🔄 FETCH & CACHE
-// ─────────────────────────────
-async function fetchReports() {
-  try {
-    const scraped = await scrapeOutageReport();
-    const seen = new Set();
-    scrapedReports = scraped.filter((r) => {
-      const key = r.message.slice(0, 80);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    console.log(`[outage] scraped reports: ${scrapedReports.length}`);
-  } catch (err) {
-    console.error("[outage] fetchReports error:", err.message);
-  }
-}
-
-fetchReports();
-setInterval(fetchReports, 5 * 60 * 1000);
-
-// ─────────────────────────────
-// 📍 LOCATION DETECTION FROM SCRAPED TEXT
-// ─────────────────────────────
-function getArea(msg) {
-  if (!msg) return null;
-  const lower = msg.toLowerCase();
-  for (const area in ALL_LOCATIONS) {
-    if (lower.includes(area.toLowerCase())) return area;
-    if (lower.includes(area.toLowerCase().split(" ")[0])) return area;
-  }
-  return null;
-}
-
-// ─────────────────────────────
-// 📊 BUILD OUTAGE LIST
-// Always returns ALL locations.
-// Status is driven by scrape hits — more hits = higher severity.
-// Locations with no scrape hits default to "Normal".
-// ─────────────────────────────
-function buildOutages() {
-  // Count scrape hits per area
-  const hitCount = {};
-  for (const r of scrapedReports) {
-    const area = getArea(r.message);
-    if (area) {
-      hitCount[area] = (hitCount[area] || 0) + 1;
-    }
-  }
-
-  const results = [];
-  let id = 1;
-
-  for (const area in ALL_LOCATIONS) {
+  // Build response
+  return areas.map((area, i) => {
     const { lat, lng } = ALL_LOCATIONS[area];
-    const hits = hitCount[area] || 0;
+    const hits = hitCounts[area] || 0;
 
     let status        = "Normal";
     let affectedUsers = 0;
@@ -156,18 +90,15 @@ function buildOutages() {
       affectedUsers = hits * 20;
     }
 
-    results.push({ id, area, lat, lng, status, affectedUsers });
-    id++;
-  }
-
-  return results;
+    return { id: i + 1, area, lat, lng, status, affectedUsers };
+  });
 }
 
 // ─────────────────────────────
 // 🌐 API ENDPOINT
 // ─────────────────────────────
 router.get("/", (req, res) => {
-  res.json(buildOutages());
+  res.json(buildMockOutages());
 });
 
 module.exports = router;
