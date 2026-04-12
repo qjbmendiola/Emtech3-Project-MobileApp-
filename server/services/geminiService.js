@@ -8,7 +8,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 async function analyzeWithGemini({ message, session, isLoggedIn, hasAccountNumber }) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+  model: "gemini-1.5-flash-latest"
+});
 
     const prompt = `
 You are an intent classifier for PLDT Smart Support, a Philippine telecom company.

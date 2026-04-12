@@ -7,11 +7,9 @@
     "icon": "./assets/images/icon.png",
     "scheme": "emtechproject",
     "userInterfaceStyle": "automatic",
-
     "ios": {
       "supportsTablet": true
     },
-
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -22,25 +20,22 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.EmtechProject"
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-
     "plugins": [
       "expo-router"
     ],
-
     "experiments": {
       "typedRoutes": true
     },
-
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "73384cb0-038a-44ed-9e24-7a34e2f71f2c"
+        "projectId": "c67602a8-066a-426e-bf94-264aeb116cd7"
       }
-    }
+    },
+    "owner": "june2"
   }
 }
