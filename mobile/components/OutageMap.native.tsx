@@ -39,7 +39,8 @@ export default function OutageMap({
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.type === "MARKER_PRESS" && onSelect) {
-        const found = outages.find((o) => String(o.id) === String(data.id));
+        // id is number — compare with == to handle both number and string from WebView
+        const found = outages.find((o) => o.id == data.id);
         if (found) onSelect(found);
       }
     } catch (_) {}
@@ -91,17 +92,17 @@ export default function OutageMap({
 
         var icon = L.divIcon({
           className: '',
-          html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color + ';border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.4);"></div>',
-          iconSize: [14, 14],
-          iconAnchor: [7, 7],
+          html: '<div style="width:16px;height:16px;border-radius:50%;background:' + color + ';border:2.5px solid #fff;box-shadow:0 0 6px rgba(0,0,0,0.4);"></div>',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
         });
 
         var marker = L.marker([o.lat, o.lng], { icon: icon })
           .addTo(map)
           .bindPopup(
             '<b>' + o.title + '</b><br>' +
-            '<span style="color:' + color + '">' + o.severity + '</span><br>' +
-            o.users + ' users affected'
+            '<span style="color:' + color + ';font-weight:700">' + o.severity + ' Severity</span><br>' +
+            '\uD83D\uDC65 ' + o.users + ' users affected'
           );
 
         marker.on('click', function() {
@@ -116,11 +117,11 @@ export default function OutageMap({
 
       if (valid.length > 0) {
         var group = L.featureGroup(markers);
-        map.fitBounds(group.getBounds().pad(0.3));
+        map.fitBounds(group.getBounds().pad(0.4));
       }
     }
 
-    // Listen for messages from React Native (Android uses document, iOS uses window)
+    // Listen for messages from React Native
     document.addEventListener('message', handleRNMessage);
     window.addEventListener('message', handleRNMessage);
 
@@ -150,6 +151,14 @@ export default function OutageMap({
         originWhitelist={["*"]}
         mixedContentMode="always"
         startInLoadingState
+        // ✅ Resend markers once WebView finishes loading
+        onLoad={() => {
+          if (webViewRef.current && outages.length > 0) {
+            webViewRef.current.postMessage(
+              JSON.stringify({ type: "SET_MARKERS", outages })
+            );
+          }
+        }}
       />
     </View>
   );
